@@ -7,7 +7,7 @@ N = 9
 
 
 def generate_sudoku():
-    """"""
+    """Generates a random solvable sudoku board"""
     grid = [[0 for y in range(N)] for x in range(N)]
     playable_num = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     num_sets = (playable_num, list(playable_num), list(playable_num))
@@ -19,7 +19,6 @@ def generate_sudoku():
                 grid[i + j][i + k] = num_sets[i // 3].pop(random.randrange(len(num_sets[i // 3])))
 
     solve_sudoku(grid)
-    # print_sudoku(grid)
 
     total_rm = random.randint(36, 72)
     for i in range(total_rm):
@@ -36,7 +35,7 @@ def generate_sudoku():
 
 
 def init_sudoku(grid):
-    """"""
+    """An initialized sudoku board determining which cells are immutable"""
     immutable_cell = [[0 for y in range(N)] for x in range(N)]
     for i in range(N):
         for j in range(N):
@@ -48,7 +47,7 @@ def init_sudoku(grid):
 
 
 def update_cell(init_grid, grid, row, col, num):
-    """"""
+    """Updates the cell with the user's chosen number"""
     if row < 1 or row > 9 or col < 1 or col > 9:
         print("Invalid: Chosen cell outside of grid")
         return
@@ -59,7 +58,7 @@ def update_cell(init_grid, grid, row, col, num):
 
 
 def prompt(prompt, num_options):
-    """"""
+    """Prompts and validates user input"""
     while True:
         try:
             value = int(input(prompt))
@@ -141,7 +140,7 @@ def verify_sudoku(grid):
     for i in range(N):
         for j in range(N):
             num = grid[i][j]
-            if not check_row(grid, i, j, num) or not check_col(grid, i, j, num) or not check_3x3(grid, i, j, num):
+            if grid[i][j] == 0 or not check_row(grid, i, j, num) or not check_col(grid, i, j, num) or not check_3x3(grid, i, j, num):
                 return "Not Solved, Try Again!"
     return "Solved!"
 
@@ -181,6 +180,7 @@ def print_sudoku(grid):
 
 
 def chosen_option(ui, grid, init_grid):
+    """Executes chosen option from main menu and play"""
     if ui == 1:
         print_sudoku(grid)
         play = prompt("Choose from the following options:\n1. Fill\n2. Unfill\n3. Return to Main Menu\n", 3)
@@ -200,36 +200,42 @@ def chosen_option(ui, grid, init_grid):
             play = prompt("Choose from the following options:\n1. Fill\n2. Unfill\n3. Return to Main Menu\n", 3)
 
             if play == 3:
-                ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Exit\n", 4)
+                ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Reset\n5. Exit\n", 5)
                 return ui
         return 1
     elif ui == 2:
         reset_sudoku(grid, init_grid)
         solve_sudoku(grid)
         print_sudoku(grid)
-        ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Exit\n", 4)
+        ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Reset\n5. Exit\n", 5)
         return ui
     elif ui == 3:
         print_sudoku(grid)
         print(verify_sudoku(grid))
-        ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Exit\n", 4)
+        ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Reset\n5. Exit\n", 5)
+        return ui
+    elif ui == 4:
+        reset_sudoku(grid, init_grid)
+        print_sudoku(grid)
+        ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Reset\n5. Exit\n", 5)
         return ui
 
 
 def reset_sudoku(grid, init_grid):
+    """Resets sudoku board"""
     for i in range(N):
         for j in range(N):
             if not init_grid[i][j]:
                 grid[i][j] = 0
+
 
 # BASIC TESTING
 if __name__ == "__main__":
     sudoku = generate_sudoku()
     immutable = init_sudoku(sudoku)
     print_sudoku(sudoku)
-    ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Exit\n", 4)
-    # ui = input("Choose from the following options (Type the number chosen):\n1. Play\n2. Solve\n3. Verify Solution\n")
-    while ui != 4:
+    ui = prompt("Main Menu\nChoose from the following options:\n1. Play\n2. Solve\n3. Verify Solution\n4. Reset\n5. Exit\n", 5)
+    while ui != 5:
         ui = chosen_option(ui, sudoku, immutable)
 
     # print(solve_sudoku(sudoku))
