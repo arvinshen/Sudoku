@@ -16,16 +16,25 @@ class Sudoku:
         self._grid = [[0 for y in range(n)] for x in range(n)]
         self._immutable_grid = [[False for y in range(n)] for x in range(n)]
         self._playable_num = ()
-        self._solved = False
+        self._solved = False  # T/F if sudoku puzzle has been solved
+        self._started = False  # T/F if a game has started
+        self._difficulty = "easy"  # easy, medium, hard, expert
         self._solution = None
         self._dict_prompt = {
             "menu": ("Sudoku Main Menu\nChoose from the following options:\n"
-                     "1. Play\n2. Solve\n3. Verify Solution\n4. Reset\n5. Exit\n", 5),
-            "difficulty": ("Choose difficulty:\n1. Easy\n2. Medium\n3. Hard", 3),
-            "play": ("Choose from the following options:\n1. Fill\n2. Unfill\n3. Return to Main Menu\n", 3),
+                     "1. Resume Game\n2. New Game\n3. Solve\n4. Verify Solution\n5. Exit\n", 5),
+            "difficulty": ("Choose difficulty:\n1. Easy\n2. Medium\n3. Hard\n4. Expert\n", 4),
+            "play": ("Choose from the following options:\n"
+                     "1. Fill\n2. Unfill\n3. Undo\n4. Redo\n5. Reset\n6. Return to Main Menu\n", 6),
             "row": ("Row to be updated (1-9): ", n),
             "column": ("Column to be updated (1-9): ", n),
             "fill": ("Number to fill cell (1-9): ", n)
+        }
+        self._dict_diff = {
+            "easy": (40, 45),
+            "medium": (50, 55),
+            "hard": (60, 65),
+            "expert": (68, 73)
         }
         for i in range(n):
             self._playable_num = self._playable_num + (i + 1,)
@@ -59,6 +68,14 @@ class Sudoku:
         """Returns T/F whether Sudoku is solved"""
         return self._solved
 
+    def get_difficulty(self):
+        """Returns current difficulty"""
+        return self._difficulty
+
+    def get_started(self):
+        """Returns T/F whether game has started"""
+        return self._started
+
     def get_immutable_grid(self):
         """Returns the immutable Sudoku grid"""
         return self._immutable_grid
@@ -67,10 +84,12 @@ class Sudoku:
         """Returns the dictionary of prompts"""
         return self._dict_prompt
 
+    def get_dict_diff(self):
+        """Returns the dictionary of difficulties"""
+        return self._dict_diff
+
     def start_sudoku(self):
         """Starts the game"""
-        self.init_sudoku(self.generate_sudoku())
-        self.print_sudoku()
         player_input = self.prompt(self.get_dict_prompt()["menu"])
         while player_input != 5:
             player_input = self.chosen_option(player_input)
@@ -139,6 +158,8 @@ class Sudoku:
 
     def verify_sudoku(self):
         """Verifies the solution of the sudoku puzzle"""
+        if not self.get_started():
+            return
         for i in range(self.get_n()):
             for j in range(self.get_n()):
                 num = self.get_grid()[i][j]
@@ -152,6 +173,9 @@ class Sudoku:
     def print_sudoku(self):  # Update to output dependent on specified block dimensions (not just for 9x9 with 3x3 blocks
         # but also for 12x12 with 3x4 blocks, 16x16 with 4x4 blocks, etc).
         """Prints sudoku grid"""
+        if not self.get_started():
+            return print("No sudoku puzzle; start a new game!\n")
+
         len_row = self.get_row()
         if len_row < 1:
             return
@@ -186,21 +210,42 @@ class Sudoku:
 
     # Commands
     def set_n(self, n):
+        """"""
         self._n = n
 
     def set_row(self, row):
+        """"""
         self._row = row
 
     def set_col(self, col):
+        """"""
         self._col = col
 
     def set_solved(self, value):
+        """"""
         self._solved = value
 
+    def set_difficulty(self, user_input):
+        """"""
+        if user_input == 2:
+            self._difficulty = "medium"
+        elif user_input == 3:
+            self._difficulty = "hard"
+        elif user_input == 4:
+            self._difficulty = "expert"
+        else:
+            self._difficulty = "easy"
+
+    def set_started(self, value):
+        """"""
+        self._started = value
+
     def set_grid(self, row, col, num):
+        """"""
         self._grid[row][col] = num
 
     def set_immutable_grid(self, row, col, immutable):
+        """"""
         self._immutable_grid[row][col] = immutable
 
     def generate_sudoku(self):
@@ -218,18 +263,22 @@ class Sudoku:
 
         self.solve_sudoku()
         self._solution = [row[:] for row in self.get_grid()]
+        self.set_started(True)
 
         # removes random number of filled cells
-        total_removed = random.randint(36, 72)
-        for i in range(total_removed):
+        min_range, max_range = self.get_dict_diff()[str(self.get_difficulty())]
+        total_removed = random.randint(min_range, max_range)
+        cells_removed = 0
+        while cells_removed < total_removed:
             cell = random.randint(0, N ** 2 - 1)
             x = cell // N
             y = cell % N
 
             if self.get_grid()[x][y] == 0:
-                i -= 1
+                continue
             else:
                 self.get_grid()[x][y] = 0
+                cells_removed += 1
 
         return self.get_grid()
 
@@ -270,27 +319,40 @@ class Sudoku:
 
     def chosen_option(self, user_input):
         """Executes chosen option from main menu and play"""
-        if user_input == 1:
-            while user_input != 3:
-                user_input = self.prompt(self.get_dict_prompt()["play"])
-                if user_input == 1 or user_input == 2:
-                    ui_row = self.prompt(self.get_dict_prompt()["row"])
-                    ui_col = self.prompt(self.get_dict_prompt()["column"])
-                    if user_input == 1:
-                        ui_num = self.prompt(self.get_dict_prompt()["fill"])
-                        self.update_cell(ui_row, ui_col, ui_num)
-                    elif user_input == 2:
-                        self.update_cell(ui_row, ui_col, 0)
-                    self.print_sudoku()
-        elif user_input == 2:
+        if user_input == 1 or user_input == 2:
+            if not self.get_started() or user_input == 2:
+                self.set_difficulty(self.prompt(self.get_dict_prompt()["difficulty"]))
+                self.init_sudoku(self.generate_sudoku())
+            self.print_sudoku()
+            self.play_sudoku(user_input)
+        elif user_input == 3:
             self.reset_sudoku()
             self.solve_sudoku()
-        elif user_input == 3:
-            self.verify_sudoku()
         elif user_input == 4:
-            self.reset_sudoku()
+            self.verify_sudoku()
         self.print_sudoku()
         return self.prompt(self.get_dict_prompt()["menu"])
+
+    def play_sudoku(self, user_input):
+        """"""
+        while user_input != 6:
+            user_input = self.prompt(self.get_dict_prompt()["play"])
+            if user_input == 1 or user_input == 2:
+                ui_row = self.prompt(self.get_dict_prompt()["row"])
+                ui_col = self.prompt(self.get_dict_prompt()["column"])
+                if user_input == 1:
+                    ui_num = self.prompt(self.get_dict_prompt()["fill"])
+                    self.update_cell(ui_row, ui_col, ui_num)
+                elif user_input == 2:
+                    self.update_cell(ui_row, ui_col, 0)
+                self.print_sudoku()
+            elif user_input == 3:
+                self.print_sudoku()
+            elif user_input == 4:
+                self.print_sudoku()
+            elif user_input == 5:
+                self.reset_sudoku()
+                self.print_sudoku()
 
     def reset_sudoku(self):
         """Resets sudoku board"""
