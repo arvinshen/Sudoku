@@ -343,13 +343,14 @@ class Sudoku:
             if user_input == 1 or user_input == 2:
                 ui_row = self.prompt(self.get_dict_prompt()["row"])
                 ui_col = self.prompt(self.get_dict_prompt()["column"])
+                ui_num = self.get_grid()[ui_row-1][ui_col-1]
                 if user_input == 1:
-                    self._undo_stack.append((ui_row, ui_col, self.get_grid()[ui_row-1][ui_col-1]))
+                    self._undo_stack.append((ui_row, ui_col, ui_num))
                     self.update_cell(ui_row, ui_col, self.prompt(self.get_dict_prompt()["fill"]))
                 elif user_input == 2:
-                    self._undo_stack.append((ui_row, ui_col, self.get_grid()[ui_row-1][ui_col-1]))
+                    self._undo_stack.append((ui_row, ui_col, ui_num))
                     self.update_cell(ui_row, ui_col, 0)
-                if self.get_immutable_grid()[ui_row][ui_col]:
+                if self.get_immutable_grid()[ui_row-1][ui_col-1] or ui_num == self.get_grid()[ui_row-1][ui_col-1]:
                     self._undo_stack.pop()
             elif user_input == 3:
                 if not self._undo_stack:
